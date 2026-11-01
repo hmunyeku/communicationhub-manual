@@ -1,0 +1,49 @@
+name: Build and deploy the manual site
+
+# The site is rebuilt from the module repository hmunyeku/communicationhub (public):
+#  - instantly, when that repository changes the manual (it sends a `manual-updated` dispatch);
+#  - as a safety net, once a day;
+#  - on demand, from the Actions tab.
+# The build runs on a GitHub runner and deploys to this repository's own GitHub Pages,
+# so no personal access token is needed here.
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [manual-updated]
+  schedule:
+    - cron: '17 5 * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Check out the module repository (manual sources live there)
+        uses: actions/checkout@v4
+        with:
+          repository: hmunyeku/communicationhub
+          ref: master
+
+      - name: Build the static site
+        run: python3 scripts/dev/manual/publish_site.py _site
+
+      - name: Upload the Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
