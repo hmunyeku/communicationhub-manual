@@ -35,6 +35,10 @@ jobs:
         with:
           repository: hmunyeku/communicationhub
           ref: master
+          # The module repository is private, so a token that can read it is required.
+          # Create a fine-grained PAT with "Contents: Read" on communicationhub and add it
+          # here as the secret MANUAL_REPO_TOKEN (Settings -> Secrets and variables -> Actions).
+          token: ${{ secrets.MANUAL_REPO_TOKEN }}
 
       - name: Build the static site
         run: python3 scripts/dev/manual/publish_site.py _site
